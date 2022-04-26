@@ -1,5 +1,29 @@
-import * as fs from "fs";
-import { exec } from "child_process";
+const fs = require("fs");
+const { exec } = require("child_process");
+
+const sqlite3 = require("sqlite3").verbose();
+const db = new sqlite3.Database("./database/db.sqlite");
+
+const express = require("express");
+const app = express();
+const port = 3000;
+
+app.get("/", (req, res) => {
+  db.all("SELECT * FROM players", (err, rows) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+
+    if (rows) {
+      res.send(rows);
+    }
+  });
+});
+
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
+});
 
 // Selecting all player files (more than one are possible)
 // It seems like the last in list is most recent file
@@ -19,24 +43,60 @@ fs.access(filePath, fs.constants.F_OK, (err) => {
   console.log("File exists, starting watch...");
 
   fs.watch(filePath, (eventType, filename) => {
+    console.log("---start-tick---");
     console.log(`event type is: ${eventType}`);
 
     if (filename) {
       console.log(`filename provided: ${filename}`);
       exec(`wc -l ${filePath};tail -1 ${filePath}`, function (error, results) {
+        if (error) {
+          console.log(error);
+          return;
+        }
+
+        if (!results) {
+          console.log(results);
+          console.log("no results?");
+          return;
+        }
+
         // Parse data from log into desired format.
         const curlyb_match = results.match(/\{([^}]+)\}/g);
         const squareb_match = results.match(/\[([^\]]+)\]/g);
 
         const player = {
-          name: results.split(" ")[4],
-          perks: curlyb_match[0],
-          traits: squareb_match[1],
-          stats: curlyb_match[1],
-          health: curlyb_match[2],
+          $name: results.split(" ")[4].replace(/['"]+/g, ""),
+          $perks: curlyb_match[0],
+          $traits: squareb_match[1],
+          $stats: curlyb_match[1],
+          $health: curlyb_match[2],
         };
 
-        console.log(player);
+        // Insert player data if it doesnt exist, otherwise update the data.
+        db.get(
+          "SELECT * FROM players WHERE name = ?",
+          player["$name"],
+          (err, rows) => {
+            if (err) {
+              console.log(err);
+              return;
+            }
+
+            if (rows) {
+              db.run(
+                "UPDATE players SET perks = $perks, traits = $traits, stats = $stats, health = $health WHERE name = $name",
+                player
+              );
+            } else {
+              db.run(
+                "INSERT INTO players (name, perks, traits, stats, health) VALUES ($name, $perks, $traits, $stats, $health)",
+                player
+              );
+            }
+          }
+        );
+
+        // console.log(player);
         console.log("---end-tick---");
       });
     } else {
