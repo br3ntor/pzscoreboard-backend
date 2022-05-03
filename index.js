@@ -4,9 +4,12 @@ const { exec } = require("child_process");
 const sqlite3 = require("sqlite3").verbose();
 const db = new sqlite3.Database("./database/db.sqlite");
 
+const https = require("https");
 const express = require("express");
 const app = express();
 const port = 3000;
+
+const cors = require("cors");
 
 // Selecting all player files (more than one are possible)
 // It seems like the last in list is most recent file
@@ -17,11 +20,11 @@ const file = fs
 
 const filePath = "/home/pzserver/Zomboid/Logs/" + file;
 
-db.serialize(() => {
-  db.run("DELETE FROM players;", () => {
-    console.log("players cleared");
-  });
-});
+// db.serialize(() => {
+//   db.run("DELETE FROM players;", () => {
+//     console.log("players cleared");
+//   });
+// });
 
 // Check if the file exists in the current directory.
 fs.access(filePath, fs.constants.F_OK, (err) => {
@@ -94,6 +97,8 @@ fs.access(filePath, fs.constants.F_OK, (err) => {
     }
   });
 });
+
+app.use(cors());
 
 app.get("/", (req, res) => {
   db.all("SELECT * FROM players", (err, rows) => {
