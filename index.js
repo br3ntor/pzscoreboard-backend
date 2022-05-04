@@ -42,8 +42,7 @@ fs.access(filePath, fs.constants.F_OK, (err) => {
       console.log(`filename provided: ${filename}`);
       exec(`wc -l ${filePath};tail -1 ${filePath}`, function (error, results) {
         if (error) {
-          console.log(error);
-          return;
+          throw error;
         }
 
         if (!results) {
