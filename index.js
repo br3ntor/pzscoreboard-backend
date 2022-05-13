@@ -40,7 +40,7 @@ fs.access(filePath, fs.constants.F_OK, (err) => {
 
     if (filename) {
       console.log(`filename provided: ${filename}`);
-      exec(`wc -l ${filePath};tail -1 ${filePath}`, function (error, results) {
+      exec(`wc -l ${filePath};tail -1 ${filePath}`, (error, results) => {
         if (error) {
           throw error;
         }
@@ -52,13 +52,15 @@ fs.access(filePath, fs.constants.F_OK, (err) => {
         }
 
         // If our line is a tick event then we enter into database
-        if (results.split(" ")[5] === "tick") {
+        const lineIsTick =
+          results.split('"')[2].trim().split(" ")[0] === "tick";
+        if (lineIsTick) {
           // Parse data from log into desired format.
           const curlyb_match = results.match(/\{([^}]+)\}/g);
           const squareb_match = results.match(/\[([^\]]+)\]/g);
 
           const player = {
-            $name: results.split(" ")[4].replace(/['"]+/g, ""),
+            $name: results.split(/"(?!\d)(.*?)"/s)[1],
             $perks: curlyb_match[0],
             $traits: squareb_match[1],
             $stats: curlyb_match[1],
