@@ -3,3 +3,4 @@ sample*
 read*
 *.sqlite
 *.db
+*.tar
