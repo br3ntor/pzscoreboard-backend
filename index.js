@@ -31,24 +31,31 @@ const lightFilePath = "/home/pzserverlight/Zomboid/Logs/" + lightFileName;
 // Updates db when newline is written to log and that line is a tick
 function logTickDBUpdate(filePath, updateFunc) {
   // Check if the file exists in the current directory.
-  fs.access(filePath, fs.constants.F_OK, (err) => {
+  // fs.access(filePath, fs.constants.F_OK, (err) => {
+  fs.stat(filePath, (err, stats) => {
     if (err) {
       throw err;
     }
 
-    console.log("File exists, starting watch...");
+    if (stats.isFile()) {
+      console.log("File exists, starting watch...");
 
-    fs.watch(filePath, (eventType, filename) => {
-      console.log("---start-tick---");
-      console.log(`event type is: ${eventType}`);
+      fs.watch(filePath, (eventType, filename) => {
+        // I think we need to check if filePath is the file
+        // that we want here.
+        console.log("---start-tick---");
+        console.log(`event type is: ${eventType}`);
 
-      if (filename) {
-        console.log(`filename provided: ${filename}`);
-        exec(`wc -l ${filePath};tail -1 ${filePath}`, updateFunc);
-      } else {
-        console.log("filename not provided");
-      }
-    });
+        if (filename) {
+          console.log(`filename provided: ${filename}`);
+          exec(`wc -l ${filePath};tail -1 ${filePath}`, updateFunc);
+        } else {
+          console.log("filename not provided");
+        }
+      });
+    } else if (stats.isDirectory()) {
+      console.log("File does not exist in directory.");
+    }
   });
 }
 
