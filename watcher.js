@@ -1,7 +1,7 @@
 import { readdir, watch, stat } from "node:fs/promises";
 import path from "node:path";
 import { exec } from "node:child_process";
-import { updateOnTick } from "./helpers";
+import updateOnTick from "./helpers.js";
 
 const ac = new AbortController();
 const { signal } = ac;
@@ -56,9 +56,9 @@ async function watchLogFile(absFP) {
 async function watchLogDirectory() {}
 
 /**
- * Main file to start the watching process
+ * Main function to start the watching process
  */
-export async function startWatching() {
+export default async function startWatching() {
   const currentLightLogFile = await getPlayerLogFilename(
     "/home/pzserverlight/Zomboid/Logs"
   );

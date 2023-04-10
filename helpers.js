@@ -1,4 +1,6 @@
-const sqlite3 = require("sqlite3").verbose();
+import sqlite3 from "sqlite3";
+sqlite3.verbose();
+
 const dbLight = new sqlite3.Database("./database/lightplayers.db");
 const dbHeavy = new sqlite3.Database("./database/heavyplayers.db");
 
@@ -45,7 +47,7 @@ function createPlayerObj(playerTick) {
 }
 
 // Callback for exec function
-function updateOnTick(error, results) {
+export default function updateOnTick(error, results) {
   if (error) {
     throw error;
   }
@@ -69,7 +71,3 @@ function updateOnTick(error, results) {
 
   console.log(results);
 }
-
-module.exports = {
-  updateOnTick,
-};
