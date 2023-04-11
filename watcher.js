@@ -41,11 +41,17 @@ async function watchLogFile(absFP) {
       const watcher = watch(absFP, { signal });
       for await (const event of watcher) {
         console.log(event);
+
+        if (event.eventType === "rename") {
+          ("What happens now?...");
+        }
+
         exec(`wc -l ${absFP};tail -1 ${absFP}`, updateOnTick);
       }
     }
   } catch (err) {
-    console.error(err);
+    console.log("Something wrong in watchLogFile");
+    throw new Error(err);
   }
 }
 

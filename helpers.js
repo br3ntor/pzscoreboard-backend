@@ -4,6 +4,9 @@ sqlite3.verbose();
 const dbLight = new sqlite3.Database("./database/lightplayers.db");
 const dbHeavy = new sqlite3.Database("./database/heavyplayers.db");
 
+let lastLightLogLineCount = 0;
+let lastHeavyLogLineCount = 0;
+
 // Insert player data if it doesnt exist, otherwise update the data.
 function insertOrUpdate(player, db) {
   db.get(
@@ -59,14 +62,38 @@ export default function updateOnTick(error, results) {
   }
 
   // If our line is a tick event then we enter into database
+  // Now we also try to check for duplicates here
+  const currentServerLogs = results.split("/")[2];
+  const currentDataBase =
+    currentServerLogs === "pzserverlight" ? dbLight : dbHeavy;
+  const lastLineNumber =
+    currentServerLogs === "pzserverlight"
+      ? lastLightLogLineCount
+      : lastHeavyLogLineCount;
+  const currentLineNumber = Number(results.split("\n")[0].split(" ")[0]);
   const lineIsTick = results.split('"')[2].trim().split(" ")[0] === "tick";
 
   if (lineIsTick) {
-    const player = createPlayerObj(results);
-    const dbToUpdate =
-      results.split("/")[2] === "pzserverlight" ? dbLight : dbHeavy;
+    if (currentLineNumber === lastLineNumber) {
+      console.log(lastLineNumber, currentLineNumber);
+      console.log("We stopped dupin, well trying to at least\n");
+      return;
+    }
 
-    insertOrUpdate(player, dbToUpdate);
+    if (currentServerLogs === "pzserverlight") {
+      lastLightLogLineCount = currentLineNumber;
+    } else if (currentServerLogs === "pzserverheavy") {
+      lastHeavyLogLineCount = currentLineNumber;
+    } else {
+      throw new Error("Oh WTF YOU DON FUCKED UP NOW!");
+    }
+
+    const player = createPlayerObj(results);
+
+    console.log(
+      `Inserting line number ${currentLineNumber} into the ${currentServerLogs}`
+    );
+    insertOrUpdate(player, currentDataBase);
   }
 
   console.log(results);
