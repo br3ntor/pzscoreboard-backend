@@ -63,11 +63,11 @@ export default function updateOnTick(error, results) {
 
   // If our line is a tick event then we enter into database
   // Now we also try to check for duplicates here
-  const currentServerLogs = results.split("/")[2];
-  const currentDataBase =
-    currentServerLogs === "pzserverlight" ? dbLight : dbHeavy;
+  const lightOrHeavyLogs = results.split("/")[2];
+  const lightOrHeavyDB =
+    lightOrHeavyLogs === "pzserverlight" ? dbLight : dbHeavy;
   const lastLineNumber =
-    currentServerLogs === "pzserverlight"
+    lightOrHeavyLogs === "pzserverlight"
       ? lastLightLogLineCount
       : lastHeavyLogLineCount;
   const currentLineNumber = Number(results.split("\n")[0].split(" ")[0]);
@@ -80,9 +80,9 @@ export default function updateOnTick(error, results) {
       return;
     }
 
-    if (currentServerLogs === "pzserverlight") {
+    if (lightOrHeavyLogs === "pzserverlight") {
       lastLightLogLineCount = currentLineNumber;
-    } else if (currentServerLogs === "pzserverheavy") {
+    } else if (lightOrHeavyLogs === "pzserverheavy") {
       lastHeavyLogLineCount = currentLineNumber;
     } else {
       throw new Error("Oh WTF YOU DON FUCKED UP NOW!");
@@ -91,9 +91,9 @@ export default function updateOnTick(error, results) {
     const player = createPlayerObj(results);
 
     console.log(
-      `Inserting line number ${currentLineNumber} into the ${currentServerLogs}`
+      `Inserting line number ${currentLineNumber} into the ${lightOrHeavyLogs}`
     );
-    insertOrUpdate(player, currentDataBase);
+    insertOrUpdate(player, lightOrHeavyDB);
   }
 
   console.log(results);

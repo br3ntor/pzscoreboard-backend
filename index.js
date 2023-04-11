@@ -16,7 +16,7 @@ app.use(cors());
 
 // These two callbacks can be abstracted
 app.get("/light", (req, res) => {
-  dbLight.all("SELECT * FROM players limit 20", (err, rows) => {
+  dbLight.all("SELECT * FROM players", (err, rows) => {
     if (err) {
       console.log(err);
       return;
@@ -29,7 +29,7 @@ app.get("/light", (req, res) => {
 });
 
 app.get("/heavy", (req, res) => {
-  dbHeavy.all("SELECT * FROM players limit 20", (err, rows) => {
+  dbHeavy.all("SELECT * FROM players", (err, rows) => {
     if (err) {
       console.log(err);
       return;
