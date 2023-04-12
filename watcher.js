@@ -43,11 +43,15 @@ async function watchLogFile(absFP) {
         console.log(event);
 
         if (event.eventType === "rename") {
-          ("What happens now?...");
+          throw new Error(
+            "Rename event means zomboid server restart, I think..."
+          );
         }
 
         exec(`wc -l ${absFP};tail -1 ${absFP}`, updateOnTick);
       }
+    } else {
+      throw new Error("A file does not exist and I want both!");
     }
   } catch (err) {
     console.log("Something wrong in watchLogFile");
@@ -59,7 +63,7 @@ async function watchLogFile(absFP) {
  * Watch directory for filename changes
  * to keep watcher in sync with active logfile
  */
-async function watchLogDirectory() {}
+// async function watchLogDirectory() {}
 
 /**
  * Main function to start the watching process
