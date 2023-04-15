@@ -23,6 +23,7 @@ async function getPlayerLogFilename(logsDir) {
 
     return fullFilePath;
   } catch (err) {
+    console.log("Caught an error:");
     console.error(err);
   }
 }
@@ -33,29 +34,38 @@ async function getPlayerLogFilename(logsDir) {
  * update database with that data
  */
 async function watchLogFile(absFP) {
+  // NOTE: I am purposely crashing program under certain
+  // conditions and haveing pm2 restart until those conditions are met
   try {
     const statobj = await stat(absFP);
-    const fileExists = statobj.isFile();
-    if (fileExists) {
-      console.log("watching: ", absFP);
-      const watcher = watch(absFP, { signal });
-      for await (const event of watcher) {
-        console.log(event);
+    const isFile = statobj.isFile();
 
-        if (event.eventType === "rename") {
-          throw new Error(
-            "Rename event means zomboid server restart, I think..."
-          );
-        }
+    if (!isFile) {
+      throw new Error("This is not a file.");
+    }
 
+    console.log("watching: ", absFP);
+    const watcher = watch(absFP, { signal });
+
+    for await (const event of watcher) {
+      console.log(event);
+
+      if (event.eventType === "rename") {
+        console.log("Server should be restarting here.");
+        ac.abort();
+      }
+
+      if (event.eventType === "change") {
         exec(`wc -l ${absFP};tail -1 ${absFP}`, updateOnTick);
       }
-    } else {
-      throw new Error("A file does not exist and I want both!");
     }
   } catch (err) {
-    console.log("Something wrong in watchLogFile");
-    throw new Error(err);
+    console.log("Caught an error:");
+    console.error(err);
+    // Abort seems to behave differently between
+    // launching with node and pm2, to be continued...
+    ac.abort();
+    throw err;
   }
 }
 
