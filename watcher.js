@@ -1,7 +1,7 @@
 import { watch, stat } from "node:fs/promises";
 import path from "node:path";
 import { exec } from "node:child_process";
-import updateOnTick from "./helpers.js";
+import updateOnTick from "./db-util.js";
 
 /**
  * Watches log directory and updates db when player log changes.
@@ -24,8 +24,6 @@ async function watchLogDirectory(logPath) {
     const watcher = watch(logPath, { signal });
 
     for await (const event of watcher) {
-      // console.log(event);
-
       if (event.eventType === "rename") {
         console.log("File removed or added to directory ");
       }

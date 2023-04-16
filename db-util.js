@@ -71,30 +71,27 @@ export default function updateOnTick(error, results) {
       ? lastLightLogLineCount
       : lastHeavyLogLineCount;
   const currentLineNumber = Number(results.split("\n")[0].split(" ")[0]);
-  const lineIsTick = results.split('"')[2].trim().split(" ")[0] === "tick";
 
-  if (lineIsTick) {
-    if (currentLineNumber === lastLineNumber) {
-      console.log(lastLineNumber, currentLineNumber);
-      console.log("We stopped dupin, well trying to at least\n");
-      return;
-    }
-
-    if (lightOrHeavyLogs === "pzserverlight") {
-      lastLightLogLineCount = currentLineNumber;
-    } else if (lightOrHeavyLogs === "pzserverheavy") {
-      lastHeavyLogLineCount = currentLineNumber;
-    } else {
-      throw new Error("Oh WTF YOU DON FUCKED UP NOW!");
-    }
-
-    const player = createPlayerObj(results);
-
-    console.log(
-      `Inserting line number ${currentLineNumber} into the ${lightOrHeavyLogs}`
-    );
-    insertOrUpdate(player, lightOrHeavyDB);
+  if (currentLineNumber === lastLineNumber) {
+    console.log(lastLineNumber, currentLineNumber);
+    console.log("We stopped dupin, well trying to at least\n");
+    return;
   }
+
+  if (lightOrHeavyLogs === "pzserverlight") {
+    lastLightLogLineCount = currentLineNumber;
+  } else if (lightOrHeavyLogs === "pzserverheavy") {
+    lastHeavyLogLineCount = currentLineNumber;
+  } else {
+    throw new Error("Oh WTF YOU DON FUCKED UP NOW!");
+  }
+
+  const player = createPlayerObj(results);
+
+  console.log(
+    `Inserting line number ${currentLineNumber} into the ${lightOrHeavyLogs}`
+  );
+  insertOrUpdate(player, lightOrHeavyDB);
 
   console.log(results);
 }
