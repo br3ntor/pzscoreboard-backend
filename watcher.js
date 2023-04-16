@@ -1,91 +1,57 @@
-import { readdir, watch, stat } from "node:fs/promises";
+import { watch, stat } from "node:fs/promises";
 import path from "node:path";
 import { exec } from "node:child_process";
 import updateOnTick from "./helpers.js";
 
-const ac = new AbortController();
-const { signal } = ac;
-
 /**
- * Return the current filename and full path
- * of the active player log file
+ * Watches log directory and updates db when player log changes.
+ * @param {string} logPath - The full path to server logs.
  */
-async function getPlayerLogFilename(logsDir) {
+async function watchLogDirectory(logPath) {
+  const ac = new AbortController();
+  const { signal } = ac;
+
   try {
-    const logFiles = await readdir(logsDir);
-    const fileName = logFiles
-      .filter((fileName) => fileName.endsWith("player.txt"))
-      .slice(-1);
-    const fullFilePath = path.format({
-      dir: logsDir,
-      base: fileName,
-    });
+    const statobj = await stat(logPath);
+    const isDirectory = statobj.isDirectory();
 
-    return fullFilePath;
-  } catch (err) {
-    console.log("Caught an error:");
-    console.error(err);
-  }
-}
-
-/**
- * Watch log file for new lines and
- * if new line has the data we need
- * update database with that data
- */
-async function watchLogFile(absFP) {
-  // NOTE: I am purposely crashing program under certain
-  // conditions and haveing pm2 restart until those conditions are met
-  try {
-    const statobj = await stat(absFP);
-    const isFile = statobj.isFile();
-
-    if (!isFile) {
-      throw new Error("This is not a file.");
+    if (!isDirectory) {
+      throw new Error("This is not a directory.");
     }
 
-    console.log("watching: ", absFP);
-    const watcher = watch(absFP, { signal });
+    console.log("watching directory: ", logPath);
+
+    const watcher = watch(logPath, { signal });
 
     for await (const event of watcher) {
-      console.log(event);
+      // console.log(event);
 
       if (event.eventType === "rename") {
-        console.log("Server should be restarting here.");
-        ac.abort();
+        console.log("File removed or added to directory ");
       }
 
-      if (event.eventType === "change") {
-        exec(`wc -l ${absFP};tail -1 ${absFP}`, updateOnTick);
+      if (
+        event.eventType === "change" &&
+        event.filename.includes("player.txt")
+      ) {
+        const fullFilePath = path.format({
+          dir: logPath,
+          base: event.filename,
+        });
+        exec(`wc -l ${fullFilePath};tail -1 ${fullFilePath}`, updateOnTick);
       }
     }
   } catch (err) {
-    console.log("Caught an error:");
-    console.error(err);
-    // Abort seems to behave differently between
-    // launching with node and pm2, to be continued...
-    ac.abort();
-    throw err;
+    console.log("Caught an error watching directory:");
+    console.log(err);
   }
 }
 
 /**
- * Watch directory for filename changes
- * to keep watcher in sync with active logfile
+ * Main function to start the watching
+ * both servers log directories.
  */
-// async function watchLogDirectory() {}
-
-/**
- * Main function to start the watching process
- */
-export default async function startWatching() {
-  const currentLightLogFile = await getPlayerLogFilename(
-    "/home/pzserverlight/Zomboid/Logs"
-  );
-  const currentHeavyLogFile = await getPlayerLogFilename(
-    "/home/pzserverheavy/Zomboid/Logs"
-  );
-
-  watchLogFile(currentLightLogFile);
-  watchLogFile(currentHeavyLogFile);
+export default function startWatching() {
+  watchLogDirectory("/home/pzserverlight/Zomboid/Logs");
+  watchLogDirectory("/home/pzserverheavy/Zomboid/Logs");
 }
