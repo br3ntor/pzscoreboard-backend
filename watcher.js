@@ -50,6 +50,6 @@ async function watchLogDirectory(logPath) {
  * both servers log directories.
  */
 export default function startWatching() {
-  watchLogDirectory("/home/pzserverlight/Zomboid/Logs");
-  watchLogDirectory("/home/pzserverheavy/Zomboid/Logs");
+  watchLogDirectory("/home/pel_pzserver/Zomboid/Logs");
+  watchLogDirectory("/home/heavy_pzserver/Zomboid/Logs");
 }

@@ -8,28 +8,29 @@ const port = 3000;
 
 sqlite3.verbose();
 
-const dbLight = new sqlite3.Database("./database/lightplayers.db");
-const dbHeavy = new sqlite3.Database("./database/heavyplayers.db");
+const serverDBs = {
+  light: new sqlite3.Database("./database/pelplayers.db"),
+  heavy: new sqlite3.Database("./database/heavyplayers.db"),
+  medium: new sqlite3.Database("./database/mediumplayers.db"),
+};
 
+// This starts the watching program, it could be its own standalone script running,
+// really no reason to run it in the same project as the api from what I can see.
 startWatching();
+
+// So remote vps can call this api
 app.use(cors());
 
-// These two callbacks can be abstracted
-app.get("/light", (req, res) => {
-  dbLight.all("SELECT * FROM players", (err, rows) => {
-    if (err) {
-      console.log(err);
-      return;
-    }
+app.get("/:db", (req, res) => {
+  const db = req.params.db;
+  const reqDB = serverDBs[db];
 
-    if (rows) {
-      res.send(rows);
-    }
-  });
-});
+  if (!reqDB) {
+    res.status(404).send(`Invalid database: ${db}`);
+    return;
+  }
 
-app.get("/heavy", (req, res) => {
-  dbHeavy.all("SELECT * FROM players", (err, rows) => {
+  reqDB.all("SELECT * FROM players", (err, rows) => {
     if (err) {
       console.log(err);
       return;

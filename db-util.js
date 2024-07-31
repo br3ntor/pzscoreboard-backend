@@ -1,7 +1,7 @@
 import sqlite3 from "sqlite3";
 sqlite3.verbose();
 
-const dbLight = new sqlite3.Database("./database/lightplayers.db");
+const dbPelLight = new sqlite3.Database("./database/pelplayers.db");
 const dbHeavy = new sqlite3.Database("./database/heavyplayers.db");
 
 let lastLightLogLineCount = 0;
@@ -21,15 +21,15 @@ function insertOrUpdate(player, db) {
       if (rows) {
         db.run(
           "UPDATE players SET perks = $perks, traits = $traits, stats = $stats, health = $health WHERE name = $name",
-          player
+          player,
         );
       } else {
         db.run(
           "INSERT INTO players (name, perks, traits, stats, health) VALUES ($name, $perks, $traits, $stats, $health) ON CONFLICT(name) DO UPDATE SET perks = $perks, traits = $traits, stats = $stats, health = $health",
-          player
+          player,
         );
       }
-    }
+    },
   );
 }
 
@@ -65,9 +65,9 @@ export default function updateOnTick(error, results) {
   // Now we also try to check for duplicates here
   const lightOrHeavyLogs = results.split("/")[2];
   const lightOrHeavyDB =
-    lightOrHeavyLogs === "pzserverlight" ? dbLight : dbHeavy;
+    lightOrHeavyLogs === "pel_pzserver" ? dbPelLight : dbHeavy;
   const lastLineNumber =
-    lightOrHeavyLogs === "pzserverlight"
+    lightOrHeavyLogs === "pel_pzserver"
       ? lastLightLogLineCount
       : lastHeavyLogLineCount;
   const currentLineNumber = Number(results.split("\n")[0].split(" ")[0]);
@@ -78,9 +78,9 @@ export default function updateOnTick(error, results) {
     return;
   }
 
-  if (lightOrHeavyLogs === "pzserverlight") {
+  if (lightOrHeavyLogs === "pel_pzserver") {
     lastLightLogLineCount = currentLineNumber;
-  } else if (lightOrHeavyLogs === "pzserverheavy") {
+  } else if (lightOrHeavyLogs === "heavy_pzserver") {
     lastHeavyLogLineCount = currentLineNumber;
   } else {
     throw new Error("Oh WTF YOU DON FUCKED UP NOW!");
@@ -89,7 +89,7 @@ export default function updateOnTick(error, results) {
   const player = createPlayerObj(results);
 
   console.log(
-    `Inserting line number ${currentLineNumber} into the ${lightOrHeavyLogs}`
+    `Inserting line number ${currentLineNumber} into the ${lightOrHeavyLogs}`,
   );
   insertOrUpdate(player, lightOrHeavyDB);
 
