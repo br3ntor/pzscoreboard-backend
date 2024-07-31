@@ -1,11 +1,17 @@
 import sqlite3 from "sqlite3";
 sqlite3.verbose();
 
-const dbPelLight = new sqlite3.Database("./database/pelplayers.db");
-const dbHeavy = new sqlite3.Database("./database/heavyplayers.db");
+const serverDBs = {
+  pel_pzserver: new sqlite3.Database("./database/pelplayers.db"),
+  medium_pzserver: new sqlite3.Database("./database/mediumplayers.db"),
+  heavy_pzserver: new sqlite3.Database("./database/heavyplayers.db"),
+};
 
-let lastLightLogLineCount = 0;
-let lastHeavyLogLineCount = 0;
+const loglineCount = {
+  pel_pzserver: 0,
+  medium_pzserver: 0,
+  heavy_pzserver: 0,
+};
 
 // Insert player data if it doesnt exist, otherwise update the data.
 function insertOrUpdate(player, db) {
@@ -61,37 +67,24 @@ export default function updateOnTick(error, results) {
     return;
   }
 
-  // If our line is a tick event then we enter into database
-  // Now we also try to check for duplicates here
-  const lightOrHeavyLogs = results.split("/")[2];
-  const lightOrHeavyDB =
-    lightOrHeavyLogs === "pel_pzserver" ? dbPelLight : dbHeavy;
-  const lastLineNumber =
-    lightOrHeavyLogs === "pel_pzserver"
-      ? lastLightLogLineCount
-      : lastHeavyLogLineCount;
+  const serverName = results.split("/")[2];
+  const db = serverDBs[serverName];
   const currentLineNumber = Number(results.split("\n")[0].split(" ")[0]);
 
-  if (currentLineNumber === lastLineNumber) {
-    console.log(lastLineNumber, currentLineNumber);
+  if (loglineCount[serverName] === currentLineNumber) {
+    console.log(loglineCount[serverName], currentLineNumber);
     console.log("We stopped dupin, well trying to at least\n");
     return;
   }
 
-  if (lightOrHeavyLogs === "pel_pzserver") {
-    lastLightLogLineCount = currentLineNumber;
-  } else if (lightOrHeavyLogs === "heavy_pzserver") {
-    lastHeavyLogLineCount = currentLineNumber;
-  } else {
-    throw new Error("Oh WTF YOU DON FUCKED UP NOW!");
-  }
+  loglineCount[serverName] = currentLineNumber;
 
   const player = createPlayerObj(results);
 
   console.log(
-    `Inserting line number ${currentLineNumber} into the ${lightOrHeavyLogs}`,
+    `Inserting line number ${currentLineNumber} into the ${serverName}`,
   );
-  insertOrUpdate(player, lightOrHeavyDB);
+  insertOrUpdate(player, db);
 
   console.log(results);
 }

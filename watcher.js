@@ -7,7 +7,7 @@ import updateOnTick from "./db-util.js";
  * Watches log directory and updates db when player log changes.
  * @param {string} logPath - The full path to server logs.
  */
-async function watchLogDirectory(logPath) {
+async function watchLogDirectory(logPath, cb) {
   const ac = new AbortController();
   const { signal } = ac;
 
@@ -36,7 +36,12 @@ async function watchLogDirectory(logPath) {
           dir: logPath,
           base: event.filename,
         });
-        exec(`wc -l ${fullFilePath};tail -1 ${fullFilePath}`, updateOnTick);
+        // updateOnTick could be taken in as an argument and watchLogDirectory
+        // could be exported and called directly instead of exporting startWatching
+        // NOTE tail is just being used to get last line of file, maybe should try
+        // just reading last line with node, would def have to do some refactoring,
+        // maybe out of curiosity later, a reason to would be cross compatability.
+        exec(`wc -l ${fullFilePath};tail -1 ${fullFilePath}`, cb);
       }
     }
   } catch (err) {
@@ -50,6 +55,7 @@ async function watchLogDirectory(logPath) {
  * both servers log directories.
  */
 export default function startWatching() {
-  watchLogDirectory("/home/pel_pzserver/Zomboid/Logs");
-  watchLogDirectory("/home/heavy_pzserver/Zomboid/Logs");
+  watchLogDirectory("/home/pel_pzserver/Zomboid/Logs", updateOnTick);
+  watchLogDirectory("/home/medium_pzserver/Zomboid/Logs", updateOnTick);
+  watchLogDirectory("/home/heavy_pzserver/Zomboid/Logs", updateOnTick);
 }
